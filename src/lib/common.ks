@@ -47,3 +47,13 @@ const clamp = (x :: Float32, .min :: Float32, .max :: Float32) -> Float32 => (
 const degree_to_rad = (a :: Float32) -> Float32 => (
     a * (@eval Float32.PI / 180)
 );
+
+const add_to_angle = (x, dx) => (
+    x^ += dx;
+    while x^ > 2 * Float32.PI do (
+        x^ -= 2.0 * Float32.PI;
+    );
+    while x^ < 0 do (
+        x^ += 2.0 * Float32.PI;
+    );
+);

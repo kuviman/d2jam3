@@ -4,26 +4,96 @@ const Player = newtype {
     
     .animation :: {
         .leg_phase :: Float32,
+        .wheel_rot :: Float32,
     },
 };
 
-let sheet = geng.load_texture(
-    "assets/textures/player/sheet.png",
-    :Nearest,
+const Sheet = newtype {
+    .total_layers :: Float32,
+    .texture :: ugli.Texture,
+    .image_size :: Vec2,
+    .pixel_size :: Vec2,
+    .layer_uv_size :: Vec2,
+};
+
+impl Sheet as module = (
+    module:
+    
+    const load = (path :: String, .total_layers) -> Sheet => (
+        let texture = geng.load_texture(path, :Nearest);
+        let pixel_size = Vec2.vdiv({ 1, 1 }, texture.size);
+        let image_size = Vec2.sub(
+            Vec2.vdiv(texture.size, { 1, total_layers }),
+            { 2, 2 } # because gaps & border
+        );
+        let layer_uv_size = Vec2.sub(
+            { 1, 1 / total_layers },
+            Vec2.mul(pixel_size, 2),
+        );
+        {
+            .texture,
+            .pixel_size,
+            .image_size,
+            .layer_uv_size,
+            .total_layers,
+        }
+    );
+    
+    const draw_layer = (
+        sheet :: Sheet,
+        .layer,
+        .pos,
+        .rotation,
+    ) => (
+        let origin = (
+            # recalculate from aseprite coords to unit quad coords
+            let { x, y } = Vec2.vdiv(layer.origin, sheet.image_size);
+            { x * 2 - 1, 1 - y * 2 }
+        );
+        geng.draw_quad_ext(
+            .pos = Vec2.sub(
+                Vec2.add(pos, origin),
+                Vec2.rotate(origin, rotation),
+            ),
+            .half_size = { 1, 1 },
+            .texture = sheet.texture,
+            .uv = {
+                .bottom_left = Vec2.add(
+                    { 0, layer.idx / sheet.total_layers },
+                    sheet.pixel_size,
+                ),
+                .size = sheet.layer_uv_size,
+            },
+            .rotation,
+        );
+    );
 );
+
+let sheets = {
+    .player = Sheet.load(
+        "assets/textures/player/sheet.png",
+        .total_layers = 7,
+    ),
+    .cart = Sheet.load(
+        "assets/textures/cart/sheet.png",
+        .total_layers = 2,
+    ),
+};
 
 impl Player as module = (
     module:
     
     const ACCEL = 10;
     const SPEED = 6;
-    const LEG_PHASE_SPEED = 20;
+    const LEG_PHASE_SPEED :: Float32 = 20;
+    const WHEEL_ROT_SPEED :: Float32 = std.op.neg[Float32](2);
     
     const new = () -> Player => {
         .pos = { 0, 0 },
         .vel = { 0, 0 },
         .animation = {
             .leg_phase = 0,
+            .wheel_rot = 0,
         }
     };
     
@@ -46,16 +116,26 @@ impl Player as module = (
         );
         player^.pos = Vec2.add(player^.pos, Vec2.mul(player^.vel, dt));
         
-        (
-            let x = &mut player^.animation.leg_phase;
-            x^ += dt * LEG_PHASE_SPEED;
-            while x^ > 2 * Float32.PI do (
-                x^ -= 2.0 * Float32.PI;
-            );
+        add_to_angle(
+            &mut player^.animation.leg_phase,
+            LEG_PHASE_SPEED * dt,
+        );
+        add_to_angle(
+            &mut player^.animation.wheel_rot,
+            WHEEL_ROT_SPEED * dt * player^.vel.0,
         );
     );
     
     const draw = (player :: &Player) => (
+        let movement_k = Vec2.len(player^.vel) / SPEED;
+        let shake_angle = (
+            Float32.sin(player^.animation.leg_phase * 2)
+            * movement_k
+            * degree_to_rad(1)
+        );
+        let arm_shake_angle = -shake_angle * 5;
+        
+        # Guy
         const layers = {
             .arm_left = { .idx = 0, .origin = { 11, 13 } },
             .arm_right = { .idx = 1, .origin = { 20, 13 } },
@@ -64,73 +144,72 @@ impl Player as module = (
             .leg_left = { .idx = 4, .origin = { 11, 21 } },
             .leg_right = { .idx = 5, .origin = { 17, 21 } },
         };
-        const total_layers = 7;
-        let pixel_size = Vec2.vdiv({ 1, 1 }, sheet.size);
-        let image_size = Vec2.sub(
-            Vec2.vdiv(sheet.size, { 1, total_layers }),
-            { 2, 2 } # because gaps & border
-        );
-        let layer_uv_size = Vec2.sub(
-            { 1, 1 / total_layers },
-            Vec2.mul(pixel_size, 2),
-        );
         let pos = player^.pos;
-        let draw_layer = (
-            .layer,
-            .rotation,
-        ) => (
-            let origin = (
-                # recalculate from aseprite coords to unit quad coords
-                let { x, y } = Vec2.vdiv(layer.origin, image_size);
-                { x * 2 - 1, 1 - y * 2 }
-            );
-            geng.draw_quad_ext(
-                .pos = Vec2.sub(
-                    Vec2.add(pos, origin),
-                    Vec2.rotate(origin, rotation),
-                ),
-                .half_size = { 1, 1 },
-                .texture = sheet,
-                .uv = {
-                    .bottom_left = Vec2.add(
-                        { 0, layer.idx / total_layers },
-                        pixel_size,
-                    ),
-                    .size = layer_uv_size,
-                },
-                .rotation,
-            );
-        );
+        let sheet = sheets.player;
         (
             # LEGS
             let phase = player^.animation.leg_phase;
-            let k = Vec2.len(player^.vel) / SPEED;
             const leg_amp = degree_to_rad(30);
-            let rot = Float32.sin(phase) * leg_amp * k;
-            draw_layer(
+            let rot = Float32.sin(phase) * leg_amp * movement_k;
+            Sheet.draw_layer(
+                sheet,
                 .layer = layers.leg_right,
+                .pos,
                 .rotation = -rot,
             );
-            draw_layer(
+            Sheet.draw_layer(
+                sheet,
                 .layer = layers.leg_left,
+                .pos,
                 .rotation = rot,
             );
         );
-        draw_layer(
+        Sheet.draw_layer(
+            sheet,
             .layer = layers.arm_right,
-            .rotation = 0,
+            .pos,
+            .rotation = degree_to_rad(-60) + arm_shake_angle,
         );
-        draw_layer(
+        Sheet.draw_layer(
+            sheet,
             .layer = layers.body,
+            .pos,
             .rotation = 0,
         );
-        draw_layer(
+        Sheet.draw_layer(
+            sheet,
             .layer = layers.head,
+            .pos,
             .rotation = degree_to_rad(30),
         );
-        draw_layer(
+        
+        (
+            # Cart
+            const layers = {
+                .wheel = { .idx = 0, .origin = { 24.5, 27.5 } },
+                .body = { .idx = 1, .origin = { 24, 27 } },
+            };
+            let pos = Vec2.add(player^.pos, { 1, 0 });
+            let sheet = sheets.cart;
+            Sheet.draw_layer(
+                sheet,
+                .layer = layers.body,
+                .pos,
+                .rotation = shake_angle,
+            );
+            Sheet.draw_layer(
+                sheet,
+                .layer = layers.wheel,
+                .pos,
+                .rotation = player^.animation.wheel_rot,
+            );
+        );
+        
+        Sheet.draw_layer(
+            sheet,
             .layer = layers.arm_left,
-            .rotation = 0,
+            .pos,
+            .rotation = degree_to_rad(-20) + arm_shake_angle,
         );
     )
 );
