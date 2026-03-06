@@ -21,7 +21,6 @@ let assets = (
     );
     
     let textures = {
-        .player = load_texture("player.png"),
     };
 );
 
@@ -36,10 +35,7 @@ impl State as module = (
     module:
     
     const new = () -> State => {
-        .player = {
-            .pos = { 0, 0 },
-            .vel = { 0, 0 },
-        },
+        .player = Player.new(),
         .camera = {
             .pos = { 0, 0 },
             .fov = 10,

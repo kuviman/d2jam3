@@ -118,6 +118,7 @@ const Camera = newtype {
 };
 
 const CameraUniforms = newtype {
+    .framebuffer_size :: Vec2,
     .view_matrix :: Mat3,
     .projection_matrix :: Mat3,
 };
@@ -143,23 +144,19 @@ impl CameraUniforms as module = (
             { 0, 0, 1 },
         };
         {
+            .framebuffer_size,
             .view_matrix,
             .projection_matrix,
         }
     );
-);
 
-impl Camera as module = (
-    module:
     
     const screen_to_world = (
-        camera :: Camera,
+        uniforms :: CameraUniforms,
         screen_pos :: Vec2,
-        .framebuffer_size :: Vec2,
     ) -> Vec2 => (
-        let uniforms = CameraUniforms.init(camera, .framebuffer_size);
         let gl_screen_pos = Vec2.map(
-            Vec2.vdiv(screen_pos, framebuffer_size),
+            Vec2.vdiv(screen_pos, uniforms.framebuffer_size),
             x => x * 2 - 1,
         );
         # projection_matrix * view_matrix * world_pos = gl_screen_pos
@@ -176,17 +173,37 @@ impl Camera as module = (
     );
 );
 
+impl Camera as module = (
+    module:
+    
+    const screen_to_world = (
+        camera :: Camera,
+        screen_pos :: Vec2,
+        .framebuffer_size :: Vec2,
+    ) -> Vec2 => (
+        let uniforms = CameraUniforms.init(camera, .framebuffer_size);
+        CameraUniforms.screen_to_world(uniforms, screen_pos)
+    );
+);
+
 const draw_quad = (
     .pos :: Vec2,
     .half_size :: Vec2,
     .texture :: ugli.Texture,
 ) => (
-    draw_quad_subtexture(.pos, .half_size, .texture, .uv = Rect.UNIT);
+    draw_quad_ext(
+        .pos,
+        .half_size,
+        .texture,
+        .uv = Rect.UNIT,
+        .rotation = 0,
+    );
 );
 
-const draw_quad_subtexture = (
+const draw_quad_ext = (
     .pos :: Vec2,
     .half_size :: Vec2,
+    .rotation :: Float32,
     .uv :: Rect,
     .texture :: ugli.Texture,
 ) => (
@@ -200,6 +217,7 @@ const draw_quad_subtexture = (
     
     program |> ugli.set_uniform("u_pos", pos, draw_state);
     program |> ugli.set_uniform("u_half_size", half_size, draw_state);
+    program |> ugli.set_uniform("u_rotation", rotation, draw_state);
     (
         let { .bottom_left, .size } = uv;
         program |> ugli.set_uniform("u_uv_bottom_left", bottom_left, draw_state);

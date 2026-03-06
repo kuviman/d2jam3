@@ -1,4 +1,26 @@
+import "./js_syntax.ks";
+
 module:
+
+impl Float64 as module = (
+    module:
+
+    const PI :: Float64 = 3.1415;
+    
+    const sin = (x :: Float64) -> Float64 => (
+        @js_call "Math.sin"(x)
+    );
+    const cos = (x :: Float64) -> Float64 => (
+        @js_call "Math.cos"(x)
+    );
+    const sqrt = (x :: Float64) -> Float64 => (
+        @js_call "Math.sqrt"(x)
+    );
+
+    const sin_cos = (x :: Float64) -> { Float64, Float64 } => (
+        { sin(x), cos(x) }
+    );
+);
 
 const Float32 = Float64;
 
@@ -24,10 +46,25 @@ impl Vec2 as module = (
     const vdiv = (a :: Vec2, b :: Vec2) -> Vec2 => (
         { a.0 / b.0, a.1 / b.1 }
     );
+
+    const rotate = (v :: Vec2, a :: Float32) -> Vec2 => (
+        let { sin, cos } = Float32.sin_cos(a);
+        {
+            v.0 * cos - v.1 * sin,
+            v.0 * sin + v.1 * cos,
+        }
+    );
     
     const map = (v :: Vec2, f :: Float32 -> Float32) -> Vec2 => (
         { f(v.0), f(v.1) }
-    )
+    );
+
+    const dot = (a :: Vec2, b :: Vec2) -> Float32 => (
+        a.0 * b.0 + a.1 * b.1
+    );
+
+    const len2 = (v :: Vec2) -> Float32 => dot(v, v);
+    const len = (v :: Vec2) -> Float32 => Float32.sqrt(len2(v));
 );
 
 const Vec3 = newtype { Float32, Float32, Float32 };
@@ -113,7 +150,7 @@ const Rect = newtype {
 
 impl Rect as module = (
     module:
-
+    
     const UNIT :: Rect = {
         .bottom_left = { 0, 0 },
         .size = { 1, 1 },
