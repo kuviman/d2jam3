@@ -117,7 +117,15 @@ impl State as module = (
         );
         
         ugli.clear({ 0.5, 0.5, 0.5, 1.0 });
-        Player.draw(&state^.player);
+        let closest_apple = state^.apples
+            |> js.List.iter
+            |> min_by_key(apple => Vec2.len2(Vec2.sub(apple.pos, state^.player.pos)));
+        Player.draw(
+            &state^.player,
+            .look_at = closest_apple
+                |> Option.map(apple => apple.pos)
+                |> Option.unwrap_or({ state^.player.pos.0, -10 })
+        );
         for ref apple in state^.apples |> js.List.iter do (
             Apple.draw(apple);
         );

@@ -48,12 +48,35 @@ const degree_to_rad = (a :: Float32) -> Float32 => (
     a * (@eval Float32.PI / 180)
 );
 
+const normalize_angle_pi = (mut x) => (
+    while x > Float32.PI do (
+        x -= 2.0 * Float32.PI;
+    );
+    while x < -Float32.PI do (
+        x += 2.0 * Float32.PI;
+    );
+    x
+);
+
 const add_to_angle = (x, dx) => (
     x^ += dx;
-    while x^ > 2 * Float32.PI do (
-        x^ -= 2.0 * Float32.PI;
+    x^ = normalize_angle_pi(x^);
+);
+
+const min_by_key = [T, K] (
+    iter :: std.iter.Iterable[T],
+     f :: T -> K,
+) -> Option.t[T] => (
+    let mut min_el = :None;
+    for value in iter do (
+        let key = f(value);
+        let update = match min_el with (
+            | :None => true
+            | :Some min_el => key < min_el.key
+        );
+        if update then (
+            min_el = :Some { .value, .key };
+        );
     );
-    while x^ < 0 do (
-        x^ += 2.0 * Float32.PI;
-    );
+    min_el |> Option.map(x => x.value)
 );

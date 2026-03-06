@@ -192,18 +192,15 @@ const draw_quad = (
     .texture :: ugli.Texture,
 ) => (
     draw_quad_ext(
-        .pos,
-        .half_size,
+        .model_matrix = Mat3.translate(pos)
+            |> Mat3.mul_mat(Mat3.scale(half_size)),
         .texture,
         .uv = Rect.UNIT,
-        .rotation = 0,
     );
 );
 
 const draw_quad_ext = (
-    .pos :: Vec2,
-    .half_size :: Vec2,
-    .rotation :: Float32,
+    .model_matrix :: Mat3,
     .uv :: Rect,
     .texture :: ugli.Texture,
 ) => (
@@ -215,14 +212,12 @@ const draw_quad_ext = (
     let mut draw_state = ugli.DrawState.init();
     let draw_state = &mut draw_state;
     
-    program |> ugli.set_uniform("u_pos", pos, draw_state);
-    program |> ugli.set_uniform("u_half_size", half_size, draw_state);
-    program |> ugli.set_uniform("u_rotation", rotation, draw_state);
     (
         let { .bottom_left, .size } = uv;
         program |> ugli.set_uniform("u_uv_bottom_left", bottom_left, draw_state);
         program |> ugli.set_uniform("u_uv_size", size, draw_state);
     );
+    program |> ugli.set_uniform("u_model_matrix", model_matrix, draw_state);
     program |> ugli.set_uniform("u_view_matrix", camera.view_matrix, draw_state);
     program |> ugli.set_uniform("u_projection_matrix", camera.projection_matrix, draw_state);
     program |> ugli.set_uniform("u_texture", texture, draw_state);

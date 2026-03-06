@@ -4,7 +4,7 @@ module:
 
 impl Float64 as module = (
     module:
-
+    
     const PI :: Float64 = 3.1415;
     
     const sin = (x :: Float64) -> Float64 => (
@@ -16,7 +16,10 @@ impl Float64 as module = (
     const sqrt = (x :: Float64) -> Float64 => (
         @js_call "Math.sqrt"(x)
     );
-
+    const atan2 = (y :: Float64, x :: Float64) -> Float64 => (
+        @js_call "Math.atan2"(y, x)
+    );
+    
     const sin_cos = (x :: Float64) -> { Float64, Float64 } => (
         { sin(x), cos(x) }
     );
@@ -28,6 +31,7 @@ const Vec2 = newtype { Float32, Float32 };
 
 impl Vec2 as module = (
     module:
+    const neg = (v :: Vec2) -> Vec2 => { -v.0, -v.1 };
     const add = (a :: Vec2, b :: Vec2) -> Vec2 => (
         { a.0 + b.0, a.1 + b.1 }
     );
@@ -46,7 +50,7 @@ impl Vec2 as module = (
     const vdiv = (a :: Vec2, b :: Vec2) -> Vec2 => (
         { a.0 / b.0, a.1 / b.1 }
     );
-
+    
     const rotate = (v :: Vec2, a :: Float32) -> Vec2 => (
         let { sin, cos } = Float32.sin_cos(a);
         {
@@ -58,13 +62,17 @@ impl Vec2 as module = (
     const map = (v :: Vec2, f :: Float32 -> Float32) -> Vec2 => (
         { f(v.0), f(v.1) }
     );
-
+    
     const dot = (a :: Vec2, b :: Vec2) -> Float32 => (
         a.0 * b.0 + a.1 * b.1
     );
-
+    
     const len2 = (v :: Vec2) -> Float32 => dot(v, v);
     const len = (v :: Vec2) -> Float32 => Float32.sqrt(len2(v));
+    
+    const arg = (v :: Vec2) -> Float32 => (
+        Float32.atan2(v.1, v.0)
+    );
 );
 
 const Vec3 = newtype { Float32, Float32, Float32 };
@@ -140,6 +148,27 @@ impl Mat3 as module = (
         };
         # dbg.print(.m, .v, .result);
         result
+    );
+    
+    const translate = ({ dx, dy } :: Vec2) -> Mat3 => {
+        { 1, 0, dx },
+        { 0, 1, dy },
+        { 0, 0, 1 },
+    };
+    
+    const scale = ({ sx, sy } :: Vec2) -> Mat3 => {
+        { sx, 0, 0 },
+        { 0, sy, 0 },
+        { 0, 0, 1 },
+    };
+    
+    const rotate = (a :: Float32) -> Mat3 => (
+        let { sin, cos } = Float32.sin_cos(a);
+        {
+            { cos, -sin, 0 },
+            { sin, cos, 0 },
+            { 0, 0, 1 },
+        }
     );
 );
 
