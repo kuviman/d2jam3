@@ -105,3 +105,17 @@ impl Mat3 as module = (
         result
     );
 );
+
+const Rect = newtype {
+    .bottom_left :: Vec2,
+    .size :: Vec2,
+};
+
+impl Rect as module = (
+    module:
+
+    const UNIT :: Rect = {
+        .bottom_left = { 0, 0 },
+        .size = { 1, 1 },
+    };
+);

@@ -11,9 +11,11 @@ uniform mat3 u_view_matrix;
 uniform mat3 u_projection_matrix;
 uniform vec2 u_pos;
 uniform vec2 u_half_size;
+uniform vec2 u_uv_bottom_left;
+uniform vec2 u_uv_size;
 
 void main() {
-    v_uv = a_uv;
+    v_uv = u_uv_bottom_left + a_uv * u_uv_size;
     v_color = a_color;
     vec2 pos = a_pos * u_half_size + u_pos;
     vec3 screen_pos = u_projection_matrix * u_view_matrix * vec3(pos, 1.0);

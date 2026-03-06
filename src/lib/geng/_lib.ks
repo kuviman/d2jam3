@@ -181,6 +181,15 @@ const draw_quad = (
     .half_size :: Vec2,
     .texture :: ugli.Texture,
 ) => (
+    draw_quad_subtexture(.pos, .half_size, .texture, .uv = Rect.UNIT);
+);
+
+const draw_quad_subtexture = (
+    .pos :: Vec2,
+    .half_size :: Vec2,
+    .uv :: Rect,
+    .texture :: ugli.Texture,
+) => (
     let ctx = (@current Context);
     let camera = (@current CameraCtx);
     let program = ctx.quad.program;
@@ -191,6 +200,11 @@ const draw_quad = (
     
     program |> ugli.set_uniform("u_pos", pos, draw_state);
     program |> ugli.set_uniform("u_half_size", half_size, draw_state);
+    (
+        let { .bottom_left, .size } = uv;
+        program |> ugli.set_uniform("u_uv_bottom_left", bottom_left, draw_state);
+        program |> ugli.set_uniform("u_uv_size", size, draw_state);
+    );
     program |> ugli.set_uniform("u_view_matrix", camera.view_matrix, draw_state);
     program |> ugli.set_uniform("u_projection_matrix", camera.projection_matrix, draw_state);
     program |> ugli.set_uniform("u_texture", texture, draw_state);

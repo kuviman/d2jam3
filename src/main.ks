@@ -25,10 +25,7 @@ let assets = (
     };
 );
 
-const Player = newtype {
-    .pos :: Vec2,
-    .vel :: Vec2,
-};
+include "./player.ks";
 
 const State = newtype {
     .player :: Player,
@@ -53,9 +50,7 @@ impl State as module = (
         state :: &mut State,
         dt :: Float64,
     ) => (
-        # TODO
-        let player = &mut state^.player;
-        player^.pos = Vec2.add(player^.pos, Vec2.mul(player^.vel, dt));
+        Player.update(&mut state^.player, dt);
     );
     
     const draw = (state :: &mut State) => (
@@ -69,11 +64,7 @@ impl State as module = (
         );
         
         ugli.clear({ 0.5, 0.5, 0.5, 1.0 });
-        geng.draw_quad(
-            .pos = state^.player.pos,
-            .half_size = { 1, 1 },
-            .texture = assets.textures.player,
-        );
+        Player.draw(&state^.player);
     );
     
     const handle_event = (
