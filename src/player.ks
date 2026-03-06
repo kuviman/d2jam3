@@ -128,6 +128,9 @@ impl Player as module = (
     
     const draw = (player :: &Player) => (
         let movement_k = Vec2.len(player^.vel) / SPEED;
+        let movement_signed_k = player^.vel.0 / SPEED * 2;
+        let top_offset :: Vec2 = { movement_signed_k * 0.1, 0 };
+        let top_pos = Vec2.add(player^.pos, top_offset);
         let shake_angle = (
             Float32.sin(player^.animation.leg_phase * 2)
             * movement_k
@@ -140,7 +143,7 @@ impl Player as module = (
             .arm_left = { .idx = 0, .origin = { 11, 13 } },
             .arm_right = { .idx = 1, .origin = { 20, 13 } },
             .head = { .idx = 2, .origin = { 14, 10 } },
-            .body = { .idx = 3, .origin = { 14, 16 } },
+            .body = { .idx = 3, .origin = { 14, 21 } },
             .leg_left = { .idx = 4, .origin = { 11, 21 } },
             .leg_right = { .idx = 5, .origin = { 17, 21 } },
         };
@@ -167,19 +170,19 @@ impl Player as module = (
         Sheet.draw_layer(
             sheet,
             .layer = layers.arm_right,
-            .pos,
+            .pos = top_pos,
             .rotation = degree_to_rad(-60) + arm_shake_angle,
         );
         Sheet.draw_layer(
             sheet,
             .layer = layers.body,
             .pos,
-            .rotation = 0,
+            .rotation = degree_to_rad(-10) * movement_signed_k,
         );
         Sheet.draw_layer(
             sheet,
             .layer = layers.head,
-            .pos,
+            .pos = top_pos,
             .rotation = degree_to_rad(30),
         );
         
@@ -195,7 +198,7 @@ impl Player as module = (
                 sheet,
                 .layer = layers.body,
                 .pos,
-                .rotation = shake_angle,
+                .rotation = shake_angle + degree_to_rad(-2) * movement_signed_k,
             );
             Sheet.draw_layer(
                 sheet,
@@ -208,7 +211,7 @@ impl Player as module = (
         Sheet.draw_layer(
             sheet,
             .layer = layers.arm_left,
-            .pos,
+            .pos = top_pos,
             .rotation = degree_to_rad(-20) + arm_shake_angle,
         );
     )
