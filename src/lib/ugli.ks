@@ -230,7 +230,7 @@ impl Vec2 as VertexAttribute = {
         .type_size = 4,
     },
     .construct_data = data => (
-        let list = js.List.init();
+        let list = js.List.new();
         for &{ x, y } in ArrayList.iter(data) do (
             list |> js.List.push(x);
             list |> js.List.push(y);
@@ -246,7 +246,7 @@ impl Vec3 as VertexAttribute = {
         .type_size = 4,
     },
     .construct_data = data => (
-        let list = js.List.init();
+        let list = js.List.new();
         for &{ x, y, z } in ArrayList.iter(data) do (
             list |> js.List.push(x);
             list |> js.List.push(y);
@@ -263,7 +263,7 @@ impl Vec4 as VertexAttribute = {
         .type_size = 4,
     },
     .construct_data = data => (
-        let list = js.List.init();
+        let list = js.List.new();
         for &{ x, y, z, w } in ArrayList.iter(data) do (
             list |> js.List.push(x);
             list |> js.List.push(y);
@@ -303,7 +303,7 @@ const Uniform = [Self] newtype {
 impl Float32 as Uniform = {
     .set = (location, x, state) => (
         let ctx = (@current gl.Context);
-        let list = js.List.init();
+        let list = js.List.new();
         @js_call ctx."uniform1f"(location, x);
     ),
 };
@@ -311,7 +311,7 @@ impl Float32 as Uniform = {
 impl Vec2 as Uniform = {
     .set = (location, value, state) => (
         let ctx = (@current gl.Context);
-        let list = js.List.init();
+        let list = js.List.new();
         let { x, y } = value;
         @js_call ctx."uniform2f"(location, x, y);
     ),
@@ -320,7 +320,7 @@ impl Vec2 as Uniform = {
 impl Vec3 as Uniform = {
     .set = (location, value, state) => (
         let ctx = (@current gl.Context);
-        let list = js.List.init();
+        let list = js.List.new();
         let { x, y, z } = value;
         @js_call ctx."uniform3f"(location, x, y, z);
     ),
@@ -329,7 +329,7 @@ impl Vec3 as Uniform = {
 impl Vec4 as Uniform = {
     .set = (location, value, state) => (
         let ctx = (@current gl.Context);
-        let list = js.List.init();
+        let list = js.List.new();
         let { x, y, z, w } = value;
         @js_call ctx."uniform4f"(location, x, y, z, w);
     ),
@@ -338,7 +338,7 @@ impl Vec4 as Uniform = {
 impl Mat3 as Uniform = {
     .set = (location, value, state) => (
         let ctx = (@current gl.Context);
-        let list = js.List.init();
+        let list = js.List.new();
         let { a, b, c } = value;
         let add = (f) => (
             list |> js.List.push(f(a));

@@ -34,7 +34,7 @@ const List = (
     
     const t = [T] @opaque_type;
     
-    const init = [T] () -> t[T] => (
+    const new = [T] () -> t[T] => (
         @native "[]"
     );
     const push = [T] (list :: t[T], x :: T) -> () => (
@@ -48,6 +48,13 @@ const List = (
             );
         ),
     };
+    const filter = [T] (list :: t[T], predicate :: T -> Bool) -> t[T] => (
+        let mut result = new();
+        for e in iter(list) do (
+            if predicate(e) then push(result, e);
+        );
+        result
+    );
 );
 
 const Obj = (
