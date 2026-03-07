@@ -1,8 +1,9 @@
 const Truck = newtype {
     .pos :: Float32,
     .vel :: Float32,
+    .plant_type :: PlantType,
     .target_vel :: Float32,
-    .state :: (:Arriving | :Standing | :Leaving),
+    .state :: (:Arriving | :Stopping | :Standing | :Leaving),
     .animation :: {
         .wheel_rot :: Float32,
     },
@@ -10,7 +11,7 @@ const Truck = newtype {
 
 let sheet = Sheet.load(
     "assets/textures/truck/sheet.png",
-    .total_layers = 4,
+    .total_layers = 5,
 );
 
 impl Truck as module = (
@@ -23,6 +24,7 @@ impl Truck as module = (
         .pos = 15,
         .vel = -SPEED,
         .target_vel = 0,
+        .plant_type = :AppleTree,
         .state = :Arriving,
         .animation = {
             .wheel_rot = 0,
@@ -33,9 +35,15 @@ impl Truck as module = (
         let target_dir = match truck^.state with (
             | :Arriving => (
                 if truck^.pos < 15 then (
-                    truck^.state = :Standing;
+                    truck^.state = :Stopping;
                 );
                 -1
+            )
+            | :Stopping => (
+                if abs(truck^.vel) < 0.0001 then (
+                    truck^.state = :Standing;
+                );
+                0
             )
             | :Standing => 0
             | :Leaving => 1
@@ -56,6 +64,7 @@ impl Truck as module = (
             .wheel2 = { .idx = 1, .origin = { 52, 56 } },
             .wheel3 = { .idx = 0, .origin = { 112, 56 } },
             .body = { .idx = 3, .origin = { 64, 55 } },
+            .body_open = { .idx = 4, .origin = { 64, 55 } },
         };
         let pos = { truck^.pos, 2 };
         let draw_layer = (.offset, .layer, .rotation) => (
@@ -77,7 +86,10 @@ impl Truck as module = (
         let wheel_rot = truck^.animation.wheel_rot;
         draw_layer(
             .offset = { 0, Float32.sin(wheel_rot * 10) * 0.02 },
-            .layer = layers.body,
+            .layer = match truck^.state with (
+                | :Leaving => layers.body_open
+                | _ => layers.body
+            ),
             .rotation = (
                 let x = abs(truck^.vel) / SPEED * 2 - 1;
                 let x = 1 - abs(x);

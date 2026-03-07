@@ -1,6 +1,7 @@
 const Tree = newtype {
     .pos :: Vec2,
     .growth :: Float32,
+    .apple_growth :: Float32,
     
     .animation :: {
         .phase :: Float32,
@@ -12,20 +13,26 @@ let sheet = Sheet.load("assets/textures/tree/sheet.png", .total_layers = 5);
 impl Tree as module = (
     module:
     
-    const GROWTH_SPEED = 0.1;
+    const GROWTH_TIME = 2;
+    const APPLE_GROWTH_TIME = 3;
     const LEAF_ANIMATION_SPEED = 2;
     const LEAF_ANIMATION_AMP = degree_to_rad(1);
     
     const new = (pos) -> Tree => {
-        .pos,
+        .pos = { pos, 0 },
         .growth = 0,
+        .apple_growth = 0,
         .animation = {
             .phase = 0,
         },
     };
     
     const update = (tree :: &mut Tree, dt :: Float64) => (
-        tree^.growth = min(tree^.growth + GROWTH_SPEED * dt, 1);
+        tree^.growth += dt / GROWTH_TIME;
+        if tree^.growth > 1 then (
+            tree^.growth = 1;
+            tree^.apple_growth += dt / APPLE_GROWTH_TIME;
+        );
         add_to_angle(&mut tree^.animation.phase, dt * LEAF_ANIMATION_SPEED);
     );
     
