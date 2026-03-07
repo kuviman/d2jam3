@@ -14,6 +14,8 @@ with geng.audio.Context = geng.audio.init();
 
 let assets = (
     module:
+
+    let font = font.Font.load("assets/font");
     
     const load_texture = path => geng.load_texture(
         "assets/textures/" + path,
@@ -26,6 +28,7 @@ let assets = (
     };
 );
 
+include "./fps.ks";
 include "./sheet.ks";
 include "./player.ks";
 include "./tree.ks";
@@ -168,6 +171,7 @@ impl State as module = (
 
 let mut state = State.new();
 let mut t = time.now();
+let mut fps_counter = FpsCounter.new();
 loop (
     let dt = (
         let new_t = time.now();
@@ -180,6 +184,9 @@ loop (
     );
     State.update(&mut state, dt);
     State.draw(&mut state);
+
+    FpsCounter.frame(&mut fps_counter, dt);
+    FpsCounter.draw(&fps_counter);
     
     geng.await_next_frame();
 );
