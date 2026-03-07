@@ -42,11 +42,12 @@ impl Sheet as module = (
             let { x, y } = Vec2.vdiv(layer.origin, sheet.image_size);
             { x * 2 - 1, 1 - y * 2 }
         );
+        let aspect = sheet.image_size.0 / sheet.image_size.1;
         geng.draw_quad_ext(
             .model_matrix = Mat3.translate(pos)
                 |> Mat3.mul_mat(Mat3.rotate(rotation))
                 |> Mat3.mul_mat(
-                    Mat3.scale(Vec2.mul({ if flip then -1 else 1, 1 }, scale))
+                    Mat3.scale(Vec2.mul({ (if flip then -1 else 1) * aspect, 1 }, scale))
                 ) |> Mat3.mul_mat(Mat3.translate(Vec2.neg(origin))),
             .texture = sheet.texture,
             .uv = {

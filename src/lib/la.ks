@@ -22,6 +22,9 @@ impl Float64 as module = (
     const round = (x :: Float64) -> Float64 => (
         @js_call "Math.round"(x)
     );
+    const pow = (x :: Float64, pow :: Float64) -> Float64 => (
+        @js_call "Math.pow"(x, pow)
+    );
     
     const sin_cos = (x :: Float64) -> { Float64, Float64 } => (
         { sin(x), cos(x) }

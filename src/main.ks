@@ -32,6 +32,7 @@ include "./fps.ks";
 include "./sheet.ks";
 include "./player.ks";
 include "./tree.ks";
+include "./truck.ks";
 
 const Apple = newtype {
     .pos :: Vec2,
@@ -79,6 +80,7 @@ const State = newtype {
     .apples :: js.List.t[Apple],
     .trees :: js.List.t[Tree],
     .next_apple_spawn :: Float32,
+    .truck :: Option.t[Truck],
 };
 
 impl State as module = (
@@ -88,11 +90,12 @@ impl State as module = (
         .player = Player.new(),
         .camera = {
             .pos = { 0, 3 },
-            .fov = 10,
+            .fov = :Horizontal 20,
         },
         .apples = js.List.new(),
         .trees = js.List.new(),
         .next_apple_spawn = 0,
+        .truck = :None,
     };
     
     const update = (
@@ -115,6 +118,10 @@ impl State as module = (
             state^.next_apple_spawn += 1 / Apple.SPAWN_RATE;
             spawn_apple(state);
         );
+
+        if state^.truck is :Some ref mut truck then (
+            Truck.update(truck, dt);
+        );
     );
     
     const draw = (state :: &mut State) => (
@@ -133,6 +140,9 @@ impl State as module = (
         );
 
         draw_ground();
+        if state^.truck is :Some ref truck then (
+            Truck.draw(truck);
+        );
 
         let closest_apple = state^.apples
             |> js.List.iter
@@ -164,7 +174,7 @@ impl State as module = (
         event :: geng.input.Event,
     ) => (
         if event is :PointerPress _ then (
-            js.List.push(state^.trees, Tree.new(state^.player.pos));
+            state^.truck = :Some Truck.new();
         );
     );
 );

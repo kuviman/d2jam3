@@ -44,6 +44,10 @@ const clamp = (x :: Float32, .min :: Float32, .max :: Float32) -> Float32 => (
     if x < min then min else if x > max then max else x
 );
 
+const clamp_abs = (x :: Float32, .max_abs :: Float32) -> Float32 => (
+    clamp(x, .min = -max_abs, .max = +max_abs)
+);
+
 const degree_to_rad = (a :: Float32) -> Float32 => (
     a * (@eval Float32.PI / 180)
 );

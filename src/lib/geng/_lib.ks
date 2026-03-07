@@ -112,9 +112,14 @@ const canvas_size = () => (
     (@current Context).canvas_size
 );
 
+const CameraFov = newtype (
+    | :Vertical Float32
+    | :Horizontal Float32
+);
+
 const Camera = newtype {
     .pos :: Vec2,
-    .fov :: Float32,
+    .fov :: CameraFov,
 };
 
 const CameraUniforms = newtype {
@@ -138,9 +143,13 @@ impl CameraUniforms as module = (
             { 0, 0, 1 },
         };
         let aspect = framebuffer_size.0 / framebuffer_size.1;
+        let { horizontal_fov, vertical_fov } = match camera.fov with (
+            | :Vertical fov => { fov * aspect, fov }
+            | :Horizontal fov => { fov, fov / aspect }
+        );
         let projection_matrix = {
-            { 2 / aspect / camera.fov, 0, 0 },
-            { 0, 2 / camera.fov, 0 },
+            { 2 / horizontal_fov, 0, 0 },
+            { 0, 2 / vertical_fov, 0 },
             { 0, 0, 1 },
         };
         {

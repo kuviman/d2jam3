@@ -25,7 +25,7 @@ impl FpsCounter as module = (
 
     const draw = (self :: &FpsCounter) => (
         with geng.CameraCtx = geng.CameraUniforms.init(
-            { .pos = { 0, 0 }, .fov = 30 },
+            { .pos = { 0, 0 }, .fov = :Vertical 30 },
             .framebuffer_size = (@current geng.CameraCtx).framebuffer_size,
         );
         let text = "FPS: " + to_string(Float32.round(self^.fps));

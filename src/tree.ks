@@ -3,8 +3,7 @@ const Tree = newtype {
     .growth :: Float32,
     
     .animation :: {
-        
-    
+        .phase :: Float32,
     },
 };
 
@@ -14,18 +13,20 @@ impl Tree as module = (
     module:
     
     const GROWTH_SPEED = 0.1;
+    const LEAF_ANIMATION_SPEED = 2;
+    const LEAF_ANIMATION_AMP = degree_to_rad(1);
     
     const new = (pos) -> Tree => {
         .pos,
         .growth = 0,
         .animation = {
-            
-        
+            .phase = 0,
         },
     };
     
     const update = (tree :: &mut Tree, dt :: Float64) => (
         tree^.growth = min(tree^.growth + GROWTH_SPEED * dt, 1);
+        add_to_angle(&mut tree^.animation.phase, dt * LEAF_ANIMATION_SPEED);
     );
     
     const draw = (tree :: &Tree) => (
@@ -59,22 +60,25 @@ impl Tree as module = (
             .rotation = 0,
             .scale,
         );
+        let rot = x => (
+            Float32.sin(tree^.animation.phase + x) * LEAF_ANIMATION_AMP
+        );
         draw_layer(
             sheet,
             .layer = layers.leaves1,
-            .rotation = 0,
+            .rotation = rot(0),
             .scale = scale_leaves,
         );
         draw_layer(
             sheet,
             .layer = layers.leaves2,
-            .rotation = 0,
+            .rotation = rot(1),
             .scale = scale_leaves,
         );
         draw_layer(
             sheet,
             .layer = layers.leaves3,
-            .rotation = 0,
+            .rotation = rot(2),
             .scale = scale_leaves,
         );
     )
