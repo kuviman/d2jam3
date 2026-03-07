@@ -80,3 +80,5 @@ const min_by_key = [T, K] (
     );
     min_el |> Option.map(x => x.value)
 );
+
+const sqr = (x :: Float32) -> Float32 => x * x;

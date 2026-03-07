@@ -8,67 +8,6 @@ const Player = newtype {
     },
 };
 
-const Sheet = newtype {
-    .total_layers :: Float32,
-    .texture :: ugli.Texture,
-    .image_size :: Vec2,
-    .pixel_size :: Vec2,
-    .layer_uv_size :: Vec2,
-};
-
-impl Sheet as module = (
-    module:
-    
-    const load = (path :: String, .total_layers) -> Sheet => (
-        let texture = geng.load_texture(path, :Nearest);
-        let pixel_size = Vec2.vdiv({ 1, 1 }, texture.size);
-        let image_size = Vec2.sub(
-            Vec2.vdiv(texture.size, { 1, total_layers }),
-            { 2, 2 } # because gaps & border
-        );
-        let layer_uv_size = Vec2.sub(
-            { 1, 1 / total_layers },
-            Vec2.mul(pixel_size, 2),
-        );
-        {
-            .texture,
-            .pixel_size,
-            .image_size,
-            .layer_uv_size,
-            .total_layers,
-        }
-    );
-    
-    const draw_layer = (
-        sheet :: Sheet,
-        .layer,
-        .pos,
-        .rotation,
-        .flip,
-    ) => (
-        let origin = (
-            # recalculate from aseprite coords to unit quad coords
-            let { x, y } = Vec2.vdiv(layer.origin, sheet.image_size);
-            { x * 2 - 1, 1 - y * 2 }
-        );
-        geng.draw_quad_ext(
-            .model_matrix = Mat3.translate(Vec2.add(pos, origin))
-                |> Mat3.mul_mat(Mat3.rotate(rotation))
-                |> Mat3.mul_mat(
-                    Mat3.scale({ if flip then -1 else 1, 1 })
-                ) |> Mat3.mul_mat(Mat3.translate(Vec2.neg(origin))),
-            .texture = sheet.texture,
-            .uv = {
-                .bottom_left = Vec2.add(
-                    { 0, layer.idx / sheet.total_layers },
-                    sheet.pixel_size,
-                ),
-                .size = sheet.layer_uv_size,
-            },
-        );
-    );
-);
-
 let sheets = {
     .player = Sheet.load(
         "assets/textures/player/sheet.png",
@@ -127,10 +66,21 @@ impl Player as module = (
     );
     
     const draw = (player :: &Player, .look_at :: Vec2) => (
+        let draw_layer = (sheet, .pos, .layer, ...args) => (
+            let origin = (
+                # recalculate from aseprite coords to unit quad coords
+                let { x, y } = Vec2.vdiv(layer.origin, sheet.image_size);
+                { x * 2 - 1, 1 - y * 2 }
+            );
+            let pos = Vec2.add(pos, origin);
+            Sheet.draw_layer(sheet, .pos, .layer, ...args);
+        );
+
         let movement_k = Vec2.len(player^.vel) / SPEED;
         let movement_signed_k = player^.vel.0 / SPEED * 2;
         let top_offset :: Vec2 = { movement_signed_k * 0.1, 0 };
-        let top_pos = Vec2.add(player^.pos, top_offset);
+        let pos = Vec2.add(player^.pos, { 0, 1 });
+        let top_pos = Vec2.add(pos, top_offset);
         let shake_angle = (
             Float32.sin(player^.animation.leg_phase * 2)
             * movement_k
@@ -147,47 +97,50 @@ impl Player as module = (
             .leg_left = { .idx = 4, .origin = { 11, 21 } },
             .leg_right = { .idx = 5, .origin = { 17, 21 } },
         };
-        let pos = player^.pos;
         let sheet = sheets.player;
         (
             # LEGS
             let phase = player^.animation.leg_phase;
             const leg_amp = degree_to_rad(30);
             let rot = Float32.sin(phase) * leg_amp * movement_k;
-            Sheet.draw_layer(
+            draw_layer(
                 sheet,
                 .layer = layers.leg_right,
                 .pos,
                 .rotation = -rot,
+                .scale = 1,
                 .flip = false,
             );
-            Sheet.draw_layer(
+            draw_layer(
                 sheet,
                 .layer = layers.leg_left,
                 .pos,
                 .rotation = rot,
+                .scale = 1,
                 .flip = false,
             );
         );
-        Sheet.draw_layer(
+        draw_layer(
             sheet,
             .layer = layers.arm_right,
             .pos = top_pos,
             .rotation = degree_to_rad(-60) + arm_shake_angle,
+            .scale = 1,
             .flip = false,
         );
-        Sheet.draw_layer(
+        draw_layer(
             sheet,
             .layer = layers.body,
             .pos,
             .rotation = degree_to_rad(-10) * movement_signed_k,
+            .scale = 1,
             .flip = false,
         );
         
         (
             let flip = look_at.0 < top_pos.0;
             let origin_angle = if flip then Float32.PI else 0;
-            Sheet.draw_layer(
+            draw_layer(
                 sheet,
                 .layer = layers.head,
                 .pos = top_pos,
@@ -195,6 +148,7 @@ impl Player as module = (
                     Vec2.arg(Vec2.sub(look_at, top_pos)) - origin_angle
                 )
                 / 2,
+                .scale = 1,
                 .flip,
             );
         );
@@ -205,29 +159,32 @@ impl Player as module = (
                 .wheel = { .idx = 0, .origin = { 24.5, 27.5 } },
                 .body = { .idx = 1, .origin = { 24, 27 } },
             };
-            let pos = Vec2.add(player^.pos, { 1, 0 });
+            let pos = Vec2.add(pos, { 1, 0 });
             let sheet = sheets.cart;
-            Sheet.draw_layer(
+            draw_layer(
                 sheet,
                 .layer = layers.body,
                 .pos,
                 .rotation = shake_angle + degree_to_rad(-2) * movement_signed_k,
+                .scale = 1,
                 .flip = false,
             );
-            Sheet.draw_layer(
+            draw_layer(
                 sheet,
                 .layer = layers.wheel,
                 .pos,
                 .rotation = player^.animation.wheel_rot,
+                .scale = 1,
                 .flip = false,
             );
         );
         
-        Sheet.draw_layer(
+        draw_layer(
             sheet,
             .layer = layers.arm_left,
             .pos = top_pos,
             .rotation = degree_to_rad(-20) + arm_shake_angle,
+            .scale = 1,
             .flip = false,
         );
     )

@@ -22,10 +22,13 @@ let assets = (
     
     let textures = {
         .apple = load_texture("apple.png"),
+        .ground = load_texture("ground.png"),
     };
 );
 
+include "./sheet.ks";
 include "./player.ks";
+include "./tree.ks";
 
 const Apple = newtype {
     .pos :: Vec2,
@@ -71,6 +74,7 @@ const State = newtype {
     .player :: Player,
     .camera :: geng.Camera,
     .apples :: js.List.t[Apple],
+    .trees :: js.List.t[Tree],
     .next_apple_spawn :: Float32,
 };
 
@@ -84,6 +88,7 @@ impl State as module = (
             .fov = 10,
         },
         .apples = js.List.new(),
+        .trees = js.List.new(),
         .next_apple_spawn = 0,
     };
     
@@ -94,6 +99,9 @@ impl State as module = (
         Player.update(&mut state^.player, dt);
         for ref mut apple in state^.apples |> js.List.iter do (
             Apple.update(apple, dt);
+        );
+        for ref mut tree in state^.trees |> js.List.iter do (
+            Tree.update(tree, dt);
         );
         state^.apples = js.List.filter(
             state^.apples,
@@ -115,8 +123,14 @@ impl State as module = (
             state^.camera,
             .framebuffer_size,
         );
-        
         ugli.clear({ 0.5, 0.5, 0.5, 1.0 });
+
+        for ref tree in state^.trees |> js.List.iter do (
+            Tree.draw(tree);
+        );
+
+        draw_ground();
+
         let closest_apple = state^.apples
             |> js.List.iter
             |> min_by_key(apple => Vec2.len2(Vec2.sub(apple.pos, state^.player.pos)));
@@ -130,6 +144,13 @@ impl State as module = (
             Apple.draw(apple);
         );
     );
+
+    const draw_ground = () => (
+        let texture = assets.textures.ground;
+        let half_size = Vec2.mul(texture.size, 1/32);
+        let pos = {0, -half_size.1};
+        geng.draw_quad(.pos, .half_size, .texture);
+    );
     
     const spawn_apple = (state :: &mut State) => (
         js.List.push(state^.apples, Apple.new());
@@ -140,7 +161,7 @@ impl State as module = (
         event :: geng.input.Event,
     ) => (
         if event is :PointerPress _ then (
-            spawn_apple(state);
+            js.List.push(state^.trees, Tree.new(state^.player.pos));
         );
     );
 );
@@ -152,7 +173,7 @@ loop (
         let new_t = time.now();
         let dt = new_t - t;
         t = new_t;
-        dt
+        min(dt, 0.1)
     );
     for event in geng.input.iter_events() do (
         State.handle_event(&mut state, event);
