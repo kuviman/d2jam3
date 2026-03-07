@@ -86,3 +86,13 @@ const min_by_key = [T, K] (
 );
 
 const sqr = (x :: Float32) -> Float32 => x * x;
+
+const or_else = [T] (
+    opt :: Option.t[T],
+    f :: () -> Option.t[T],
+) -> Option.t[T] => (
+    match opt with (
+        | :None => f()
+        | :Some _ => opt
+    )
+);

@@ -26,13 +26,18 @@ impl Seed as module = (
     const update = (self :: &mut Seed, dt :: Float32) => (
         self^.t += dt / TIME;
     );
+
+    const pos = (self :: &Seed) -> Vec2 => (
+        let t = self^.t;
+        {
+            t * self^.target + (1 - t) * 7,
+            (1 - sqr(t * 2 - 1)) * 4 + (1 - t) * 2
+        }
+    );
     
     const draw = (self :: &Seed) => (
         let t = self^.t;
-        let pos = {
-            t * self^.target + (1 - t) * 7,
-            (1 - sqr(t * 2 - 1)) * 4 + (1 - t) * 2
-        };
+        let pos = pos(self);
         geng.draw_quad_ext(
             .model_matrix = Mat3.translate(pos)
                 |> Mat3.mul_mat(Mat3.rotate(t * 10))

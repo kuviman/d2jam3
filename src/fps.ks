@@ -32,7 +32,7 @@ impl FpsCounter as module = (
         font.Font.draw(
             &assets.font,
             text,
-            .pos = { 0, 14 },
+            .pos = { 0, -15 },
             .size = 1,
             .color = { 0, 0, 0, 1 },
             .align = 0.5,

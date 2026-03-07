@@ -44,6 +44,7 @@ include "./seed.ks";
 const Apple = newtype {
     .pos :: Vec2,
     .vel :: Vec2,
+    .catched :: Bool,
 };
 
 impl Apple as module = (
@@ -56,11 +57,14 @@ impl Apple as module = (
     const SPAWN_RATE = 1;
     
     const new = (pos) -> Apple => (
-        const V = 5;
-        let vx = std.random.gen_range(.min = -V, .max = +V);
+        const V = 2;
         {
             .pos,
-            .vel = { vx, 8 },
+            .vel = {
+                std.random.gen_range(.min = -V, .max = +V),
+                5 + std.random.gen_range(.min = 0, .max = 6),
+            },
+            .catched = false,
         }
     );
     
@@ -86,6 +90,7 @@ const State = newtype {
     .trees :: js.List.t[Tree],
     .truck :: Option.t[Truck],
     .seed :: Option.t[Seed],
+    .score :: Int32,
 };
 
 impl State as module = (
@@ -101,6 +106,7 @@ impl State as module = (
         .trees = js.List.new(),
         .truck = :None,
         .seed = :None,
+        .score = 0,
     };
     
     const update = (
@@ -108,8 +114,13 @@ impl State as module = (
         dt :: Float64,
     ) => (
         Player.update(&mut state^.player, dt);
+        let cart_pos = Vec2.add(state^.player.pos, { 1, 0.5 });
         for ref mut apple in state^.apples |> js.List.iter do (
             Apple.update(apple, dt);
+            if Vec2.len(Vec2.sub(apple^.pos, cart_pos)) < 0.7 then (
+                apple^.catched = true;
+                state^.score += 1;
+            );
         );
         for ref mut tree in state^.trees |> js.List.iter do (
             Tree.update(tree, dt);
@@ -127,7 +138,7 @@ impl State as module = (
         );
         state^.apples = js.List.filter(
             state^.apples,
-            apple => apple.pos.1 > 0,
+            apple => apple.pos.1 > 0 and not apple.catched,
         );
 
         if state^.truck is :Some ref mut truck then (
@@ -181,17 +192,48 @@ impl State as module = (
             Seed.draw(seed);
         );
 
-        let closest_apple = state^.apples
-            |> js.List.iter
-            |> min_by_key(apple => Vec2.len2(Vec2.sub(apple.pos, state^.player.pos)));
         Player.draw(
             &state^.player,
-            .look_at = closest_apple
-                |> Option.map(apple => apple.pos)
-                |> Option.unwrap_or({ state^.player.pos.0, -10 })
+            .look_at = 
+                state^.seed |> Option.map(seed => Seed.pos(&seed))
+                |> or_else(() => (
+                    let closest_apple = state^.apples
+                        |> js.List.iter
+                        |> min_by_key(apple => (
+                            Vec2.len2(Vec2.sub(apple.pos, state^.player.pos))
+                        ));
+                    closest_apple |> Option.map(apple => apple.pos)
+                ))
+                |> or_else(() => (
+                    let closest_tree = state^.trees
+                        |> js.List.iter
+                        |> min_by_key(tree => (
+                            Vec2.len2(Vec2.sub(tree.pos, state^.player.pos))
+                        ));
+                    closest_tree |> Option.map(tree => tree.pos)
+                ))
+                |> Option.unwrap_or ({ state^.player.pos.0 + 1, -10 })
         );
         for ref apple in state^.apples |> js.List.iter do (
             Apple.draw(apple);
+        );
+
+        draw_score(state);
+    );
+
+    const draw_score = (state :: &mut State) => (
+        with geng.CameraCtx = geng.CameraUniforms.init(
+            { .pos = { 0, 0 }, .fov = :Vertical 30 },
+            .framebuffer_size = (@current geng.CameraCtx).framebuffer_size,
+        );
+        let text = "SCORE: " + to_string(state^.score);
+        font.Font.draw(
+            &assets.font,
+            text,
+            .pos = { 0, 12 },
+            .size = 2,
+            .color = { 0, 0, 0, 1 },
+            .align = 0.5,
         );
     );
 
