@@ -54,6 +54,7 @@ impl Player as module = (
             )
         );
         player^.pos = Vec2.add(player^.pos, Vec2.mul(player^.vel, dt));
+        player^.pos.0 = clamp(player^.pos.0, .min = -9, .max = +9);
         
         add_to_angle(
             &mut player^.animation.leg_phase,
@@ -75,7 +76,7 @@ impl Player as module = (
             let pos = Vec2.add(pos, origin);
             Sheet.draw_layer(sheet, .pos, .layer, ...args);
         );
-
+        
         let movement_k = Vec2.len(player^.vel) / SPEED;
         let movement_signed_k = player^.vel.0 / SPEED * 2;
         let top_offset :: Vec2 = { movement_signed_k * 0.1, 0 };
@@ -124,7 +125,7 @@ impl Player as module = (
             sheet,
             .layer = layers.arm_right,
             .pos = top_pos,
-            .rotation = degree_to_rad(-60) + arm_shake_angle,
+            .rotation = degree_to_rad(-70) + arm_shake_angle,
             .scale = 1,
             .flip = false,
         );
@@ -159,7 +160,7 @@ impl Player as module = (
                 .wheel = { .idx = 0, .origin = { 24.5, 27.5 } },
                 .body = { .idx = 1, .origin = { 24, 27 } },
             };
-            let pos = Vec2.add(pos, { 1, 0 });
+            let pos = Vec2.add(pos, { 1, -1 / 16 });
             let sheet = sheets.cart;
             draw_layer(
                 sheet,

@@ -25,6 +25,7 @@ let assets = (
     let textures = {
         .apple = load_texture("apple.png"),
         .ground = load_texture("ground.png"),
+        .house = load_texture("house.png"),
     };
 );
 
@@ -34,54 +35,13 @@ const PlantType = newtype (
     | :AppleTree
 );
 
+include "./apple.ks";
 include "./fps.ks";
 include "./sheet.ks";
 include "./player.ks";
 include "./tree.ks";
 include "./truck.ks";
 include "./seed.ks";
-
-const Apple = newtype {
-    .pos :: Vec2,
-    .vel :: Vec2,
-    .catched :: Bool,
-};
-
-impl Apple as module = (
-    module:
-    
-    const RADIUS = std.op.div[Float32](1, 4);
-    const GRAVITY = 8;
-    const MAX_SPEED = 8;
-    
-    const SPAWN_RATE = 1;
-    
-    const new = (pos) -> Apple => (
-        const V = 2;
-        {
-            .pos,
-            .vel = {
-                std.random.gen_range(.min = -V, .max = +V),
-                5 + std.random.gen_range(.min = 0, .max = 6),
-            },
-            .catched = false,
-        }
-    );
-    
-    const update = (apple :: &mut Apple, dt :: Float32) => (
-        let vy = &mut apple^.vel.1;
-        vy^ = max(vy^ - GRAVITY * dt, -MAX_SPEED);
-        apple^.pos = Vec2.add(apple^.pos, Vec2.mul(apple^.vel, dt));
-    );
-    
-    const draw = (apple :: &Apple) => (
-        geng.draw_quad(
-            .pos = apple^.pos,
-            .half_size = { RADIUS, RADIUS },
-            .texture = assets.textures.apple,
-        );
-    );
-);
 
 const State = newtype {
     .player :: Player,
@@ -125,10 +85,8 @@ impl State as module = (
         for ref mut tree in state^.trees |> js.List.iter do (
             Tree.update(tree, dt);
             if tree^.apple_growth >= 1 then (
-                for _ in 0..3 do (
-                    js.List.push(state^.apples, Apple.new(
-                        Vec2.add(tree^.pos, { 0, 2 })
-                    ));
+                for apple in js.List.iter(tree^.apples) do (
+                    js.List.push(state^.apples, Apple.new(apple.pos));
                 );
             );
         );
@@ -179,6 +137,11 @@ impl State as module = (
             .framebuffer_size,
         );
         ugli.clear({ 0.8, 0.8, 1, 1 });
+        geng.draw_quad(
+            .pos = { -9, 2 },
+            .half_size = { 2, 2 },
+            .texture = assets.textures.house,
+        );
 
         for ref tree in state^.trees |> js.List.iter do (
             Tree.draw(tree);
@@ -214,7 +177,7 @@ impl State as module = (
                         Vec2.add(tree.pos, { 0, Tree.scale(&tree) })
                     ))
                 ))
-                |> Option.unwrap_or ({ state^.player.pos.0 + 1, -10 })
+                |> Option.unwrap_or ({ 9, 2 })
         );
         for ref apple in state^.apples |> js.List.iter do (
             Apple.draw(apple);

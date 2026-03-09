@@ -1,7 +1,13 @@
+const TreeApple = newtype {
+    .pos :: Vec2,
+};
+
 const Tree = newtype {
     .pos :: Vec2,
     .growth :: Float32,
     .apple_growth :: Float32,
+
+    .apples :: js.List.t[TreeApple],
     
     .animation :: {
         .phase :: Float32,
@@ -25,6 +31,18 @@ impl Tree as module = (
         .animation = {
             .phase = 0,
         },
+        .apples = (
+            let list = js.List.new();
+            for _ in 0..std.random.gen_range(.min = 1, .max = 5) do (
+                let a = std.random.gen_range(.min = 0, .max = 2 * Float32.PI);
+                let r = Float32.pow(std.random.gen_range(.min = 0, .max = 1), 1/2);
+                let apple = {
+                    .pos = Vec2.add({ pos, 2.3 }, Vec2.rotate({ r, 0 }, a)),
+                };
+                js.List.push(list, apple);
+            );
+            list
+        ),
     };
     
     const update = (tree :: &mut Tree, dt :: Float64) => (
@@ -91,6 +109,17 @@ impl Tree as module = (
             .layer = layers.leaves3,
             .rotation = rot(2),
             .scale = scale_leaves,
+        );
+        let apple_growth = Float32.pow(tree^.apple_growth, 1/2);
+        for apple in js.List.iter(tree^.apples) do (
+            const radius :: Float32 = 1/4;
+            let r = radius * apple_growth;
+            geng.draw_quad_ext(
+                .model_matrix = Mat3.translate(apple.pos)
+                    |> Mat3.mul_mat(Mat3.scale({ r, r })),
+                .texture = assets.textures.apple,
+                .uv = Rect.UNIT,
+            );
         );
     )
 );
