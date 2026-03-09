@@ -249,7 +249,7 @@ impl State as module = (
         event :: geng.input.Event,
     ) => (
         if event is :PointerPress _ then (
-            state^.truck = :Some Truck.new();
+            # state^.truck = :Some Truck.new();
         );
     );
 );
