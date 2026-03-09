@@ -35,6 +35,11 @@ impl Tree as module = (
         );
         add_to_angle(&mut tree^.animation.phase, dt * LEAF_ANIMATION_SPEED);
     );
+
+    const MAX_SCALE = 2;
+    const scale = (tree :: &Tree) -> Float32 => (
+        (1 - sqr(1 - tree^.growth)) * MAX_SCALE
+    );
     
     const draw = (tree :: &Tree) => (
         const layers = {
@@ -43,9 +48,8 @@ impl Tree as module = (
             .leaves2 = { .idx = 2, .origin = { 47, 34 } },
             .leaves3 = { .idx = 1, .origin = { 41, 13 } },
         };
-        const MAX_SCALE = 2;
-        let scale = tree^.growth * MAX_SCALE;
-        let scale_leaves = sqr(tree^.growth) * MAX_SCALE;
+        let scale = scale(tree);
+        let scale_leaves = sqr(scale / MAX_SCALE) * MAX_SCALE;
         let pos = Vec2.add(tree^.pos, { 0, scale + (1 - tree^.growth) * -0.3 });
         let draw_layer = (sheet, .layer, ...args) => (
             let origin = (
