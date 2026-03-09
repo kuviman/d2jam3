@@ -25,6 +25,7 @@
             just
             caddy
             inotify-tools
+            butler
           ];
         };
       });

@@ -18,3 +18,6 @@ build-watch:
 serve:
     just build
     caddy run
+
+publish:
+    butler push target kuviman/apple-jack:html5
