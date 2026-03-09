@@ -210,7 +210,9 @@ impl State as module = (
                         |> min_by_key(tree => (
                             Vec2.len2(Vec2.sub(tree.pos, state^.player.pos))
                         ));
-                    closest_tree |> Option.map(tree => tree.pos)
+                    closest_tree |> Option.map(tree => (
+                        Vec2.add(tree.pos, { 0, Tree.scale(&tree) })
+                    ))
                 ))
                 |> Option.unwrap_or ({ state^.player.pos.0 + 1, -10 })
         );
