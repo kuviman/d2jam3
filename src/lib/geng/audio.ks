@@ -29,12 +29,22 @@ impl PlayOptions as module = (
     };
 );
 
-const play_with = (buffer :: Buffer, options :: PlayOptions) -> () => (
+const Sfx = @opaque_type;
+
+impl Sfx as module = (
+    module:
+
+    const set_volume = (self :: &mut Sfx, volume :: Float64) -> () => (
+        (@native "Runtime.audio.set_sfx_volume")(.sfx = self, .volume)
+    );
+);
+
+const play_with = (buffer :: Buffer, options :: PlayOptions) -> Sfx => (
     let ctx = (@current Context);
     (@native "Runtime.audio.play")(.ctx, .buffer, .options)
 );
 
-const play = (buffer :: Buffer) => (
+const play = (buffer :: Buffer) -> Sfx => (
     play_with(buffer, PlayOptions.default())
 );
 

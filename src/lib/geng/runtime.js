@@ -134,9 +134,14 @@ Runtime.audio = {
     source.loop = options.loop;
     source.connect(gain).connect(ctx.master);
     source.start();
+    return { gain }
   },
   set_master_volume: (_ctx, { ctx, volume }) => {
     ctx.master.gain.value = volume;
+  },
+  set_sfx_volume: (_ctx, { sfx, volume }) => {
+    sfx = sfx.get();
+    sfx.gain.gain.value = volume;
   },
 };
 
