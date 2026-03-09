@@ -159,7 +159,7 @@ impl State as module = (
         );
         state^.apples = js.List.filter(
             state^.apples,
-            apple => apple.pos.1 > 0 and not apple.catched,
+            apple => apple.pos.1 > -3 and not apple.catched,
         );
 
         if state^.truck is :Some ref mut truck then (
