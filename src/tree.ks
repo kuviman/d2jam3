@@ -119,6 +119,7 @@ impl Tree as module = (
                     |> Mat3.mul_mat(Mat3.scale({ r, r })),
                 .texture = assets.textures.apple,
                 .uv = Rect.UNIT,
+                .color = { 1, 1, 1, 1 },
             );
         );
     )

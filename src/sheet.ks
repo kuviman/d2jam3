@@ -57,6 +57,7 @@ impl Sheet as module = (
                 ),
                 .size = sheet.layer_uv_size,
             },
+            .color = { 1, 1, 1, 1 },
         );
     );
 );

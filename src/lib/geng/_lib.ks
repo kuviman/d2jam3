@@ -205,6 +205,7 @@ const draw_quad = (
             |> Mat3.mul_mat(Mat3.scale(half_size)),
         .texture,
         .uv = Rect.UNIT,
+        .color = { 1, 1, 1, 1 },
     );
 );
 
@@ -212,6 +213,7 @@ const draw_quad_ext = (
     .model_matrix :: Mat3,
     .uv :: Rect,
     .texture :: ugli.Texture,
+    .color :: Vec4,
 ) => (
     let ctx = (@current Context);
     let camera = (@current CameraCtx);
@@ -230,6 +232,7 @@ const draw_quad_ext = (
     program |> ugli.set_uniform("u_view_matrix", camera.view_matrix, draw_state);
     program |> ugli.set_uniform("u_projection_matrix", camera.projection_matrix, draw_state);
     program |> ugli.set_uniform("u_texture", texture, draw_state);
+    program |> ugli.set_uniform("u_color", color, draw_state);
     program |> ugli.set_vertex_data_source(ctx.quad.buffer);
     gl.draw_arrays(gl.TRIANGLE_FAN, 0, 4);
 );

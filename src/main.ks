@@ -26,6 +26,8 @@ let assets = (
         .apple = load_texture("apple.png"),
         .ground = load_texture("ground.png"),
         .house = load_texture("house.png"),
+        .score_particle = load_texture("score.png"),
+        .explosion = load_texture("explosion.png"),
     };
 );
 
@@ -43,6 +45,37 @@ include "./tree.ks";
 include "./truck.ks";
 include "./seed.ks";
 
+const Particle = newtype {
+    .pos :: Vec2,
+    .vel :: Vec2,
+    .rot :: Float32,
+    .scale :: Float32,
+    .w :: Float32,
+    .t :: Float32,
+    .texture :: ugli.Texture,
+};
+
+impl Particle as module = (
+    module:
+
+    const update = (self :: &mut Particle, dt :: Float32) => (
+        self^.pos = Vec2.add(self^.pos, Vec2.mul(self^.vel, dt));
+        self^.t += dt;
+    );
+
+    const draw = (self :: &Particle) => (
+        let scale = self^.scale;
+        geng.draw_quad_ext(
+            .model_matrix = Mat3.translate(self^.pos)
+                |> Mat3.mul_mat(Mat3.rotate(self^.rot))
+                |> Mat3.mul_mat(Mat3.scale({ scale, scale })),
+            .texture = self^.texture,
+            .uv = Rect.UNIT,
+            .color = { 1, 1, 1, 1 - self^.t },
+        );
+    );
+);
+
 const State = newtype {
     .player :: Player,
     .camera :: geng.Camera,
@@ -51,6 +84,7 @@ const State = newtype {
     .truck :: Option.t[Truck],
     .seed :: Option.t[Seed],
     .score :: Int32,
+    .particles :: js.List.t[Particle],
 };
 
 impl State as module = (
@@ -67,6 +101,7 @@ impl State as module = (
         .truck = :None,
         .seed = :None,
         .score = 0,
+        .particles = js.List.new(),
     };
     
     const update = (
@@ -80,6 +115,15 @@ impl State as module = (
             if Vec2.len(Vec2.sub(apple^.pos, cart_pos)) < 0.7 then (
                 apple^.catched = true;
                 state^.score += 1;
+                js.List.push(state^.particles, {
+                    .pos = apple^.pos,
+                    .vel = { 0, 1 },
+                    .t = 0,
+                    .rot = 0,
+                    .w = 0,
+                    .scale = 1/4,
+                    .texture = assets.textures.score_particle,
+                });
             );
         );
         for ref mut tree in state^.trees |> js.List.iter do (
@@ -87,6 +131,25 @@ impl State as module = (
             if tree^.apple_growth >= 1 then (
                 for apple in js.List.iter(tree^.apples) do (
                     js.List.push(state^.apples, Apple.new(apple.pos));
+                );
+                for _ in 0..15 do (
+                    const V = 1;
+                    const W = 5;
+                    js.List.push(state^.particles, {
+                        .pos = Vec2.add(tree^.pos, {
+                            std.random.gen_range(.min = -1, .max = +1),
+                            2.2 + std.random.gen_range(.min = -1, .max = +1),
+                        }),
+                        .vel = {
+                            std.random.gen_range(.min = -V, .max = +V),
+                            std.random.gen_range(.min = -V, .max = +V),
+                        },
+                        .t = 0,
+                        .rot = std.random.gen_range(.min = 0, .max = 2 * Float32.PI),
+                        .w = std.random.gen_range(.min = -W, .max = +W),
+                        .scale = 1/2,
+                        .texture = assets.textures.explosion,
+                    });
                 );
             );
         );
@@ -124,6 +187,14 @@ impl State as module = (
                 );
                 state^.seed = :None;
             );
+        );
+
+        for ref mut p in js.List.iter(state^.particles) do (
+            Particle.update(p, dt);
+        );
+        state^.particles = js.List.filter(
+            state^.particles,
+            p => p.t < 1,
         );
     );
     
@@ -181,6 +252,10 @@ impl State as module = (
         );
         for ref apple in state^.apples |> js.List.iter do (
             Apple.draw(apple);
+        );
+
+        for ref p in js.List.iter(state^.particles) do (
+            Particle.draw(p);
         );
 
         draw_score(state);

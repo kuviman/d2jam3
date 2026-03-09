@@ -44,6 +44,7 @@ impl Seed as module = (
                 |> Mat3.mul_mat(Mat3.scale({ RADIUS, RADIUS })),
             .texture,
             .uv = Rect.UNIT,
+            .color = { 1, 1, 1, 1 },
         );
     );
 );
